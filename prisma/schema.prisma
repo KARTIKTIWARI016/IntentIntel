@@ -1,0 +1,155 @@
+// IntentIntel — CRM buying-intent detection schema.
+// Provider is SQLite for local dev (no enums/arrays → use String + JSON strings).
+// Portable to Postgres for the Azure VM: change provider + DATABASE_URL only.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// A company we research. Deduplicated by normalized domain.
+model Company {
+  id              String         @id @default(cuid())
+  name            String
+  domain          String         @unique
+  url             String
+  industry        String?
+  employeeCount   String? // bucket label, e.g. "51-200"
+  revenueEstimate String?
+  existingCrm     String?
+  techStack       String? // JSON string array
+  firstSeen       DateTime       @default(now())
+  lastAnalyzedAt  DateTime?
+  runs            AnalysisRun[]
+
+  @@index([domain])
+}
+
+/// One intent analysis of a company at a point in time. Cacheable via expiresAt.
+model AnalysisRun {
+  id               String         @id @default(cuid())
+  companyId        String
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status           String         @default("complete") // complete | failed
+  intentScore      Int            @default(0) // 0-100
+  confidence       Int            @default(0) // 0-100
+  buyingStage      String         @default("unaware") // unaware|aware|in_market|evaluating|decision
+  summary          String? // short human explanation
+  rawModelOutput   String? // full JSON returned by Gemini
+  groundingSources String? // JSON: [{title,uri}] grounding citations
+  errorMessage     String?
+  createdAt        DateTime       @default(now())
+  expiresAt        DateTime // createdAt + recency window; cache reuse boundary
+  signals          Signal[]
+  outreach         OutreachDraft?
+  feedback         Feedback?
+
+  @@index([companyId, createdAt])
+}
+
+/// A single detected intent signal with cited evidence.
+model Signal {
+  id            String      @id @default(cuid())
+  analysisRunId String
+  analysisRun   AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+  category      String // competitor_displacement | hiring | active_research | procurement_rfp
+  strength      Int // 0-100 raw strength as judged by the model
+  ageDays       Int         @default(0)
+  decayedWeight Float       @default(0) // contribution after decay (debuggable)
+  evidenceQuote String
+  sourceUrl     String?
+  sourceType    String? // review_site | job_board | social_forum | news_pr | rfp | other
+  detectedDate  String? // ISO date string as reported by source
+
+  @@index([analysisRunId])
+}
+
+/// AI-drafted outreach message tailored to detected signals.
+model OutreachDraft {
+  id            String      @id @default(cuid())
+  analysisRunId String      @unique
+  analysisRun   AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+  message       String
+  tone          String      @default("consultative")
+  createdAt     DateTime    @default(now())
+}
+
+/// SDR feedback used to compute the north-star acceptance rate.
+model Feedback {
+  id            String      @id @default(cuid())
+  analysisRunId String      @unique
+  analysisRun   AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+  verdict       String // accept | reject
+  note          String?
+  userId        String?
+  createdAt     DateTime    @default(now())
+}
+
+/// Background job for the free-tier-aware queue/worker.
+model Job {
+  id           String    @id @default(cuid())
+  type         String // single | bulk_item
+  batchId      String? // groups bulk_item jobs
+  payload      String // JSON: { name, url }
+  status       String    @default("queued") // queued | running | done | failed
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  resultRunId  String?
+  errorMessage String?
+  scheduledFor DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  startedAt    DateTime?
+  finishedAt   DateTime?
+
+  @@index([status, scheduledFor])
+  @@index([batchId])
+}
+
+/// A full 9-section account-intelligence dossier (Markdown) for a company. Cached via expiresAt.
+model Dossier {
+  id        String   @id @default(cuid())
+  companyId String?
+  domain    String
+  name      String
+  model     String
+  markdown  String // full GitHub-flavored Markdown report
+  sources   String? // JSON: [{title,uri}] grounding citations
+  queries   String? // JSON: string[] web search queries used
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([domain, createdAt])
+}
+
+/// Groups a CSV upload of companies.
+model Batch {
+  id        String   @id @default(cuid())
+  name      String?
+  total     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+/// Singleton runtime configuration (id is always "singleton").
+model Config {
+  id            String   @id @default("singleton")
+  ourCrmName    String   @default("OUR_CRM")
+  competitors   String   @default("[\"Salesforce\",\"HubSpot\",\"Zoho CRM\",\"Pipedrive\",\"Microsoft Dynamics 365\",\"Freshsales\"]") // JSON array
+  intentDef     String   @default("A company shows buying intent if, within the last 30 days, public signals indicate it is actively researching, comparing, hiring for, or procuring CRM software — suggesting it is in or about to enter a CRM buying cycle.")
+  recencyDays   Int      @default(30)
+  decayHalfLife Int      @default(15) // days; gradual exponential decay
+  signalWeights String   @default("{\"competitor_displacement\":1.0,\"procurement_rfp\":1.0,\"active_research\":0.8,\"hiring\":0.6}") // JSON object
+  geminiModel   String   @default("gemini-2.5-flash")
+  updatedAt     DateTime @updatedAt
+}
+
+/// Stub for later team auth.
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}

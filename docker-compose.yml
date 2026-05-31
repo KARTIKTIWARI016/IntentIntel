@@ -1,0 +1,36 @@
+# Local / VM deployment. Web + worker share one SQLite volume.
+# For the Korcomptenz VM, put this service behind the shared Nginx (see README).
+services:
+  web:
+    build: .
+    image: intentintel:latest
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/data/dev.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - WORKER_RPM=${WORKER_RPM:-8}
+      - DAILY_API_BUDGET=${DAILY_API_BUDGET:-200}
+    volumes:
+      - intentintel-data:/data
+    ports:
+      - "3000:3000"
+    command: sh -c "npx prisma db push --skip-generate && npm run start"
+    restart: unless-stopped
+
+  worker:
+    image: intentintel:latest
+    depends_on:
+      - web
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/data/dev.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - WORKER_RPM=${WORKER_RPM:-8}
+      - DAILY_API_BUDGET=${DAILY_API_BUDGET:-200}
+    volumes:
+      - intentintel-data:/data
+    command: sh -c "sleep 8 && npm run worker"
+    restart: unless-stopped
+
+volumes:
+  intentintel-data:
