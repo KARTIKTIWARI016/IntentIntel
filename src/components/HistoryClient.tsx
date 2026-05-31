@@ -20,6 +20,17 @@ interface HistoryItem {
   expiresAt: string;
 }
 
+interface Status {
+  supabase?: {
+    configured: boolean;
+    urlConfigured: boolean;
+    keyConfigured: boolean;
+    secretKeyConfigured: boolean;
+    databaseConfigured: boolean;
+    persistentHistory: boolean;
+  };
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
@@ -31,8 +42,16 @@ function formatDate(value: string) {
 
 export function HistoryClient() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [status, setStatus] = useState<Status | null>(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then(setStatus)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -96,6 +115,17 @@ export function HistoryClient() {
           </div>
         </div>
       </div>
+
+      {status?.supabase && !status.supabase.persistentHistory && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          <div className="font-semibold">History is visible, but not yet retained in Supabase.</div>
+          <p className="mt-1">
+            Supabase keys are detected, but the database connection is still local SQLite. Add your
+            Supabase Postgres connection string as <code>DATABASE_URL</code> to retain history
+            across deploys.
+          </p>
+        </div>
+      )}
 
       <div className="card overflow-hidden">
         <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-[var(--color-line)]">
