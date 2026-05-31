@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bell,
   CircleHelp,
+  History,
   Radar,
   Search,
   Settings,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/", label: "Analyze", icon: Radar },
+  { href: "/history", label: "History", icon: History },
   { href: "/bulk", label: "Bulk Queue", icon: Upload },
   { href: "/metrics", label: "Metrics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },

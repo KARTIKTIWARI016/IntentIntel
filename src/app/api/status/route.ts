@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { budgetStatus } from "@/lib/queue";
 import { getConfig } from "@/lib/config";
+import { supabaseStatus } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,5 +21,6 @@ export async function GET() {
     ourCrmName: config.ourCrmName,
     geminiModel: config.geminiModel,
     apiKeyConfigured: hasKey,
+    supabase: supabaseStatus(),
   });
 }
