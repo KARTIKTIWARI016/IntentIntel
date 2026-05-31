@@ -142,7 +142,11 @@ export function ReportView({ report }: { report: IntentReport }) {
             >
               {report.company.domain} <ExternalLink size={12} />
             </a>
-            {report.summary && <p className="text-sm text-[var(--color-muted)] mt-2">{report.summary}</p>}
+            {report.summary && (
+              <p className="text-sm text-[var(--color-muted)] mt-2 whitespace-pre-line">
+                {report.summary}
+              </p>
+            )}
           </div>
         </div>
 

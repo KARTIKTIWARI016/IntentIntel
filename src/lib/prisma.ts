@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS Config (
   recencyDays INTEGER NOT NULL DEFAULT 30,
   decayHalfLife INTEGER NOT NULL DEFAULT 15,
   signalWeights TEXT NOT NULL DEFAULT '{"competitor_displacement":1.0,"procurement_rfp":1.0,"active_research":0.8,"hiring":0.6}',
-  geminiModel TEXT NOT NULL DEFAULT 'gemini-2.5-flash',
+  geminiModel TEXT NOT NULL DEFAULT 'gemini-3-flash-preview',
   updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -140,6 +140,9 @@ CREATE TABLE IF NOT EXISTS User (
 );
 `);
   db.prepare("INSERT OR IGNORE INTO Config (id) VALUES ('singleton')").run();
+  db.prepare(
+    "UPDATE Config SET geminiModel = 'gemini-3-flash-preview' WHERE geminiModel = 'gemini-2.5-flash'",
+  ).run();
   db.close();
   globalForPrisma.sqliteReady = true;
 }

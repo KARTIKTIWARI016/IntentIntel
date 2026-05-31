@@ -139,7 +139,7 @@ export function HistoryClient() {
                     {item.domain} <ExternalLink size={11} />
                   </a>
                   {item.summary && (
-                    <p className="mt-2 text-sm text-[var(--color-muted)] line-clamp-2">
+                    <p className="mt-2 text-sm text-[var(--color-muted)] line-clamp-3 whitespace-pre-line">
                       {item.summary}
                     </p>
                   )}

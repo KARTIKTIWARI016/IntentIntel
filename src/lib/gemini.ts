@@ -36,7 +36,7 @@ Direct CRM competitors include: ${competitors}.
 
 INTENT DEFINITION: ${config.intentDef}
 
-TASK: Using Google Search, research the company below and determine whether it is currently showing buying intent for a CRM solution. ONLY count public evidence from the LAST ${config.recencyDays} DAYS. Ignore anything older.
+TASK: Using Google Search, research the company below and determine whether it is currently showing buying intent for a CRM solution. ONLY count public evidence from the LAST ${config.recencyDays} DAYS. Ignore anything older for scoring, but you may use older public sources only for stable firmographic context.
 
 COMPANY:
 - Name: ${name}
@@ -50,13 +50,21 @@ Look specifically for these four signal categories:
 
 Prefer these source types: review_site, job_board, social_forum, news_pr, rfp.
 
+RESEARCH DEPTH:
+- Run a broad account-intelligence pass before scoring: company website, news, press releases, careers/jobs, review sites, public forums, CRM/vendor comparison pages, procurement/RFP mentions, and technology-stack mentions surfaced by Search.
+- Return up to 8 high-quality signals when available, prioritizing the strongest and most recent evidence. Include weak/negative findings only if they explain why intent is low.
+- Capture concrete details a sales rep can use: trigger event, inferred pain, current/likely CRM, affected team, buying stage rationale, likely urgency, and why the evidence matters.
+- If evidence is thin, say exactly what was checked and what was not found in the summary. Do not hide uncertainty.
+
 OUTPUT RULES:
 - Respond with a SINGLE valid JSON object and NOTHING else (no markdown, no commentary).
 - For every signal include a short verbatim evidenceQuote and the exact sourceUrl you found it at.
+- Evidence quotes should be specific enough to be useful, not generic company boilerplate.
 - "strength" is 0-100 (how strong/explicit the buying intent is).
 - "ageDays" is your best estimate of how many days ago the signal is from (0 if today, omit if unknown).
 - If you find NO qualifying recent signals, return an empty "signals" array and inMarketForCrm=false. Do NOT fabricate evidence.
-- "summary" is 1-3 sentences a sales rep can read at a glance.
+- "buyingStageRationale" is a detailed 4-7 sentence explanation of why this company is or is not in a CRM buying cycle.
+- "summary" is a useful 4-6 sentence sales-rep brief covering the account context, strongest evidence, confidence caveats, and recommended next step.
 
 JSON SHAPE:
 {

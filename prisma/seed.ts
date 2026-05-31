@@ -8,8 +8,8 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   await prisma.config.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton" },
-    update: {},
+    create: { id: "singleton", geminiModel: "gemini-3-flash-preview" },
+    update: { geminiModel: "gemini-3-flash-preview" },
   });
   console.log("Seeded singleton Config (edit it in Settings or via PUT /api/config).");
 }

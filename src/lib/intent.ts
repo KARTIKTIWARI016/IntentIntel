@@ -128,7 +128,10 @@ export async function analyzeCompany(
       intentScore: scored.intentScore,
       confidence: scored.confidence,
       buyingStage: scored.buyingStage,
-      summary: output.summary || output.buyingStageRationale,
+      summary:
+        output.summary && output.buyingStageRationale
+          ? `${output.summary}\n\nRationale: ${output.buyingStageRationale}`
+          : output.summary || output.buyingStageRationale,
       rawModelOutput: raw,
       groundingSources: JSON.stringify(sources),
       expiresAt,

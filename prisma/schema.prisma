@@ -142,7 +142,7 @@ model Config {
   recencyDays   Int      @default(30)
   decayHalfLife Int      @default(15) // days; gradual exponential decay
   signalWeights String   @default("{\"competitor_displacement\":1.0,\"procurement_rfp\":1.0,\"active_research\":0.8,\"hiring\":0.6}") // JSON object
-  geminiModel   String   @default("gemini-2.5-flash")
+  geminiModel   String   @default("gemini-3-flash-preview")
   updatedAt     DateTime @updatedAt
 }
 
